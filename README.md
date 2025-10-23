@@ -71,7 +71,7 @@ curl -X POST https://ra-hyp-1.raworc.com/api/v0/agents \
       "S3_BUCKET_NAME": "your-bucket-name",
       "AWS_REGION": "us-east-1"
     },
-    "setup": "git clone YOUR_REPO_URL file-upload-tool && cd file-upload-tool && pip install -r requirements.txt",
+    "setup": "git clone https://github.com/CloserlookAI/file-upload-tool.git file-upload-tool && cd file-upload-tool && pip install -r requirements.txt",
     "instructions": "You are an S3 file upload assistant. Help users upload files to S3 using: cd file-upload-tool && python uploader.py [command]"
   }'
 ```
@@ -92,7 +92,7 @@ curl -X POST https://ra-hyp-1.raworc.com/api/v0/agents \
       "DO_SPACES_BUCKET": "your-space-name",
       "DO_SPACES_REGION": "nyc3"
     },
-    "setup": "git clone YOUR_REPO_URL file-upload-tool && cd file-upload-tool && pip install -r requirements.txt",
+    "setup": "git clone https://github.com/CloserlookAI/file-upload-tool.git file-upload-tool && cd file-upload-tool && pip install -r requirements.txt",
     "instructions": "You are a Digital Ocean Spaces upload assistant. Help users upload files using: cd file-upload-tool && python do_uploader.py [command]"
   }'
 ```
