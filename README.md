@@ -260,20 +260,73 @@ If accessing files from web browsers, add CORS rules:
 
 ### "AccessDenied" Error When Viewing Files
 
-If uploaded files return `AccessDenied` XML error:
+If uploaded files return `AccessDenied` XML error, this is a **Digital Ocean Spaces permissions issue**. Follow these steps:
 
-**Solution 1: Enable Space Public Access** (Recommended)
-- Go to Digital Ocean dashboard → Spaces → Settings
-- Enable "Public" under File Listing
-- This makes all files publicly accessible
+#### REQUIRED FIX: Enable Space Public Access
 
-**Solution 2: Verify Upload Command**
-- Ensure you're NOT using the `--private` flag
-- Default behavior is public: `python do_uploader.py upload-url <url>`
+Digital Ocean Spaces require the **entire Space** to be set as Public, not just individual files:
 
-**Solution 3: Check ACL Permissions**
-- Files should have `public-read` ACL
-- The uploader sets this automatically unless `--private` is used
+1. Go to https://cloud.digitalocean.com/spaces
+2. Click on your Space (e.g., `remoteagent`)
+3. Click the **Settings** tab
+4. Find **"File Listing"** section
+5. Change from **"Restricted"** to **"Public"**
+6. Click **Save**
+
+**This is REQUIRED** even though the uploader sets `ACL=public-read` on individual files.
+
+#### Test Upload & Access
+
+Run the test script to verify:
+
+```bash
+python test_upload.py
+```
+
+This will:
+- Upload a test file with public ACL
+- Test if it's accessible via HTTP
+- Show exactly what's wrong if access is denied
+- Clean up after testing
+
+#### Manual Verification
+
+After enabling Space public access:
+
+1. Upload a file:
+   ```bash
+   python do_uploader.py upload-url https://example.com/test.pdf
+   ```
+
+2. Check the returned URL (e.g., `https://files.remoteagent.com/test.pdf`)
+
+3. Open the URL in a browser or test with curl:
+   ```bash
+   curl -I https://files.remoteagent.com/test.pdf
+   ```
+
+4. Should return `HTTP/1.1 200 OK` (not 403 Forbidden)
+
+#### Still Getting AccessDenied?
+
+If you still get errors after enabling Space public access:
+
+1. **Check Space ACL Settings:**
+   - In DO dashboard, go to Space Settings
+   - Verify "File Listing" shows "Public" (not "Restricted")
+
+2. **Verify Spaces API Keys:**
+   - Make sure your API keys have write permissions
+   - Regenerate keys if needed
+
+3. **Check File ACL After Upload:**
+   - In DO dashboard, click on an uploaded file
+   - Check if "Public URL" is shown
+   - If not, the Space is still restricted
+
+4. **Clear CDN Cache:**
+   - If using CDN, it may cache the 403 error
+   - Wait 5-10 minutes or invalidate CDN cache
 
 ### "Missing required environment variables"
 Set all required environment variables for your chosen service in `.env` file.

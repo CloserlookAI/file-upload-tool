@@ -133,9 +133,15 @@ class DOSpacesUploader:
         content_type = self.get_content_type(str(file_path))
         
         # Prepare extra args
-        extra_args = {'ContentType': content_type}
+        extra_args = {
+            'ContentType': content_type,
+            'CacheControl': 'public, max-age=31536000'
+        }
         if make_public:
             extra_args['ACL'] = 'public-read'
+        
+        # Debug: Print what we're uploading
+        print(f"  ACL: {'public-read' if make_public else 'private'}")
         
         try:
             print(f"📤 Uploading {filename} to DO Spaces: {self.do_spaces_bucket}/{space_key}")
