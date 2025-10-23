@@ -166,13 +166,120 @@ result = uploader.delete_file('old-file.pdf')
 | DO_SPACES_FILES_URL | No | CDN URL | https://cdn.example.com |
 | DO_SPACES_PREFIX | No | Folder prefix | uploads |
 
+## Remote Agent Setup
+
+### Create Agent for Digital Ocean Spaces
+
+```bash
+curl -X POST https://ra-hyp-1.raworc.com/api/v0/agents \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "file-uploader",
+    "description": "Upload files to Digital Ocean Spaces",
+    "env": {
+      "DO_SPACES_KEY": "your_actual_key",
+      "DO_SPACES_SECRET": "your_actual_secret",
+      "DO_SPACES_ENDPOINT": "nyc3.digitaloceanspaces.com",
+      "DO_SPACES_BUCKET": "remoteagent",
+      "DO_SPACES_REGION": "nyc3",
+      "DO_SPACES_FILES_URL": "https://files.remoteagent.com"
+    },
+    "setup": "git clone https://github.com/CloserlookAI/file-upload-tool.git && cd file-upload-tool && pip install -r requirements.txt",
+    "instructions": "You are a file upload assistant. When users provide file URLs, download and upload them to Digital Ocean Spaces. Use: python do_uploader.py upload-url <url>. Always return the uploaded file URL from https://files.remoteagent.com"
+  }'
+```
+
+### Usage Examples
+
+**User:** "Upload this file: https://example.com/document.pdf"
+
+**Agent:** Downloads and uploads, returns:
+```
+✓ File uploaded successfully!
+URL: https://files.remoteagent.com/document.pdf
+```
+
+**User:** "Upload report.pdf to the documents folder"
+
+**Agent:** Uploads with custom path:
+```
+✓ File uploaded to: documents/report.pdf
+URL: https://files.remoteagent.com/documents/report.pdf
+```
+
+## Making Files Public (Important!)
+
+**By default, files are uploaded as PUBLIC** so they're accessible via direct URL.
+
+### Ensure Files Are Public
+
+The uploader sets `ACL='public-read'` by default when uploading:
+
+```bash
+# ✅ Uploads as PUBLIC (default)
+python do_uploader.py upload myfile.pdf
+python do_uploader.py upload-url https://example.com/file.pdf
+
+# ❌ Uploads as PRIVATE (only if you use --private flag)
+python do_uploader.py upload myfile.pdf --private
+```
+
+### Enable Space-Wide Public Access
+
+To ensure all files in your Space are publicly accessible:
+
+1. Go to [Digital Ocean Dashboard](https://cloud.digitalocean.com/)
+2. Navigate to **Spaces** → **Your Space Name** (e.g., `remoteagent`)
+3. Click **Settings** tab
+4. Under **File Listing**, enable **Public**
+5. Save changes
+
+This makes all files in the Space publicly readable without individual ACL settings.
+
+### Set CORS Rules (For Browser Access)
+
+If accessing files from web browsers, add CORS rules:
+
+1. Go to your Space settings
+2. Click on **CORS Configurations**
+3. Add this configuration:
+
+```xml
+<CORSConfiguration>
+  <CORSRule>
+    <AllowedOrigin>*</AllowedOrigin>
+    <AllowedMethod>GET</AllowedMethod>
+    <AllowedMethod>HEAD</AllowedMethod>
+    <AllowedHeader>*</AllowedHeader>
+  </CORSRule>
+</CORSConfiguration>
+```
+
 ## Troubleshooting
 
-### "Missing required environment variables"
-Set all required environment variables for your chosen service.
+### "AccessDenied" Error When Viewing Files
 
-### "Access Denied"
-- Verify credentials are correct
+If uploaded files return `AccessDenied` XML error:
+
+**Solution 1: Enable Space Public Access** (Recommended)
+- Go to Digital Ocean dashboard → Spaces → Settings
+- Enable "Public" under File Listing
+- This makes all files publicly accessible
+
+**Solution 2: Verify Upload Command**
+- Ensure you're NOT using the `--private` flag
+- Default behavior is public: `python do_uploader.py upload-url <url>`
+
+**Solution 3: Check ACL Permissions**
+- Files should have `public-read` ACL
+- The uploader sets this automatically unless `--private` is used
+
+### "Missing required environment variables"
+Set all required environment variables for your chosen service in `.env` file.
+
+### "Access Denied" (Credentials Issue)
+- Verify credentials are correct in `.env` file
 - Check IAM/API key permissions
 - Ensure bucket/space exists
 
@@ -182,7 +289,9 @@ Run: `pip install -r requirements.txt`
 ### URL download fails
 - Check the URL is accessible
 - Verify network connectivity
+- Some URLs may require authentication
 
 ### CDN URLs not working (DO Spaces)
 - Enable CDN in Digital Ocean dashboard
-- Set DO_SPACES_FILES_URL to your CDN endpoint
+- Set `DO_SPACES_FILES_URL` to your CDN endpoint (e.g., `https://files.remoteagent.com`)
+- CDN can take 5-10 minutes to propagate changes
